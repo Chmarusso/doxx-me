@@ -3,6 +3,7 @@
 import { sdk } from "@farcaster/frame-sdk";
 import { useEffect } from "react";
 import { useAccount, useConnect, useSignMessage } from "wagmi";
+import Link from "next/link";
 
 export default function Home() {
   useEffect(() => {
@@ -17,9 +18,18 @@ export default function Home() {
             Doxx Me
           </h1>
           <p style={{ opacity: 0.8, fontSize: '1.1rem' }}>
-            Mini App + Next.js + TS + React + Wagmi
+            prove online stuff to others
           </p>
         </div>
+        
+        <div style={{ marginBottom: '24px' }}>
+          <Link href="/reddit" style={{ textDecoration: 'none' }}>
+            <button className="glass-button-primary" style={{ width: '100%', marginBottom: '16px' }}>
+              🔗 Connect Reddit Account
+            </button>
+          </Link>
+        </div>
+        
         <ConnectMenu />
       </div>
     </div>
