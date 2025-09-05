@@ -1,0 +1,30 @@
+{
+  "name": "doxx-me",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "biome check app"
+  },
+  "dependencies": {
+    "@farcaster/frame-sdk": "latest",
+    "@farcaster/frame-wagmi-connector": "latest",
+    "@farcaster/miniapp-wagmi-connector": "^1.0.0",
+    "@tanstack/react-query": "5.45.1",
+    "next": "^15.0.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "viem": "latest",
+    "wagmi": "latest"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.0",
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.1",
+    "@types/react-dom": "^18.3.0",
+    "@wagmi/cli": "latest",
+    "typescript": "^5.8.3"
+  }
+}
