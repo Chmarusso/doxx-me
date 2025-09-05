@@ -4,7 +4,7 @@
 
 /* Base styles */
 body {
-  background: linear-gradient(135deg, #312e81 0%, #7c3aed 50%, #be185d 100%);
+  background: linear-gradient(135deg, #1e1b4b 0%, #581c87 50%, #831843 100%);
   min-height: 100vh;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   color: white;
@@ -38,12 +38,16 @@ body {
   font-weight: 500;
   transition: all 0.2s ease;
   cursor: pointer;
+  color: white;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .glass-button:hover {
   background: rgba(255, 255, 255, 0.2);
   border-color: rgba(255, 255, 255, 0.4);
   transform: scale(1.05);
+  color: white;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .glass-button:focus {

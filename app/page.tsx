@@ -34,17 +34,18 @@ export default function Home() {
 function WalletFirstFlow({ user, setUser, isRegistering, setIsRegistering }: any) {
   const { isConnected, address } = useAccount();
   const { connect, connectors } = useConnect();
+  const { signMessage, isPending: isSigningPending } = useSignMessage();
+  const [needsSignature, setNeedsSignature] = useState(false);
 
   useEffect(() => {
     if (isConnected && address && !user && !isRegistering) {
-      handleUserRegistration(address);
+      checkUserOrRequestSignature(address);
     }
   }, [isConnected, address, user, isRegistering]);
 
-  const handleUserRegistration = async (walletAddress: string) => {
-    setIsRegistering(true);
+  const checkUserOrRequestSignature = async (walletAddress: string) => {
     try {
-      const response = await fetch('/api/users/register', {
+      const response = await fetch('/api/users/check', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,8 +55,49 @@ function WalletFirstFlow({ user, setUser, isRegistering, setIsRegistering }: any
 
       const data = await response.json();
 
+      if (response.ok && data.userExists) {
+        setUser(data.user);
+        console.log('✅ User loaded:', data.user);
+      } else {
+        setNeedsSignature(true);
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+      setNeedsSignature(true);
+    }
+  };
+
+  const handleSignAndRegister = async () => {
+    if (!address) return;
+    
+    const message = `Welcome to Doxx Me!\n\nPlease sign this message to verify wallet ownership and create your account.\n\nWallet: ${address}\nTimestamp: ${new Date().toISOString()}`;
+    
+    try {
+      const signature = await signMessage({ message });
+      if (signature) {
+        await handleUserRegistration(address, message, signature);
+      }
+    } catch (error) {
+      console.error('Error signing message:', error);
+    }
+  };
+
+  const handleUserRegistration = async (walletAddress: string, message: string, signature: string) => {
+    setIsRegistering(true);
+    try {
+      const response = await fetch('/api/users/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ walletAddress, message, signature }),
+      });
+
+      const data = await response.json();
+
       if (response.ok && data.success) {
         setUser(data.user);
+        setNeedsSignature(false);
         console.log('✅ User registered/loaded:', data.user);
       } else {
         console.error('User registration failed:', data.error);
@@ -85,6 +127,24 @@ function WalletFirstFlow({ user, setUser, isRegistering, setIsRegistering }: any
     );
   }
 
+  if (needsSignature) {
+    return (
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ marginBottom: '24px', fontSize: '0.95rem', opacity: 0.8 }}>
+          Please sign a message to verify wallet ownership and create your account.
+        </p>
+        <button 
+          onClick={handleSignAndRegister}
+          disabled={isSigningPending}
+          className="glass-button-primary"
+          style={{ width: '100%', fontWeight: 600 }}
+        >
+          {isSigningPending ? "Signing..." : "Sign & Create Account"}
+        </button>
+      </div>
+    );
+  }
+
   if (isRegistering) {
     return (
       <div style={{ textAlign: 'center', padding: '24px' }}>
@@ -97,7 +157,7 @@ function WalletFirstFlow({ user, setUser, isRegistering, setIsRegistering }: any
           animation: 'spin 1s linear infinite',
           margin: '0 auto 16px'
         }}></div>
-        <p style={{ opacity: 0.8 }}>Setting up your account...</p>
+        <p style={{ opacity: 0.8 }}>Creating your account...</p>
       </div>
     );
   }
@@ -112,7 +172,7 @@ function WalletFirstFlow({ user, setUser, isRegistering, setIsRegistering }: any
         Failed to setup account. Please try again.
       </p>
       <button 
-        onClick={() => handleUserRegistration(address!)}
+        onClick={() => checkUserOrRequestSignature(address!)}
         className="glass-button"
         style={{ width: '100%' }}
       >
@@ -164,8 +224,6 @@ function UserDashboard({ user, setUser }: any) {
           </Link>
         )}
       </div>
-      
-      <ConnectMenu />
     </div>
   );
 }

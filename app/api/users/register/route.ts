@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { verifyMessage, isAddress } from 'viem';
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,19 +14,43 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate wallet address format (basic Ethereum address validation)
-    if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
+    if (!signature || !message) {
+      return NextResponse.json(
+        { error: 'Signature and message are required for account creation' },
+        { status: 400 }
+      );
+    }
+
+    if (!isAddress(walletAddress)) {
       return NextResponse.json(
         { error: 'Invalid wallet address format' },
         { status: 400 }
       );
     }
 
-    console.log('User registration request:', { 
-      walletAddress,
-      hasSignature: !!signature,
-      hasMessage: !!message
-    });
+    // Verify the signature
+    try {
+      const isValidSignature = await verifyMessage({
+        address: walletAddress as `0x${string}`,
+        message,
+        signature: signature as `0x${string}`,
+      });
+
+      if (!isValidSignature) {
+        return NextResponse.json(
+          { error: 'Invalid signature - wallet verification failed' },
+          { status: 401 }
+        );
+      }
+    } catch (signatureError) {
+      console.error('Signature verification error:', signatureError);
+      return NextResponse.json(
+        { error: 'Failed to verify signature' },
+        { status: 401 }
+      );
+    }
+
+    console.log('✅ Signature verified successfully for wallet:', walletAddress);
 
     // Create or find user by wallet address
     const user = await db.user.upsert({
@@ -36,7 +61,7 @@ export async function POST(request: NextRequest) {
       },
       create: {
         walletAddress: walletAddress.toLowerCase(),
-        isVerified: false, // Wallet connection alone doesn't verify identity
+        isVerified: false, // Wallet ownership verified, but not identity
       },
       include: {
         redditData: {
