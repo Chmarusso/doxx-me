@@ -6,14 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "biome check app"
+    "lint": "biome check app",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev",
+    "db:studio": "prisma studio",
+    "db:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@farcaster/frame-sdk": "latest",
     "@farcaster/frame-wagmi-connector": "latest",
     "@farcaster/miniapp-wagmi-connector": "^1.0.0",
+    "@prisma/client": "^6.15.0",
     "@tanstack/react-query": "5.45.1",
     "next": "^15.0.0",
+    "prisma": "^6.15.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "viem": "latest",

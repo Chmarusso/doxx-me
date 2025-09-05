@@ -1,0 +1,112 @@
+// Prisma schema for Doxx Me app
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+model RedditData {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Basic Reddit account info
+  redditId       String  @unique
+  username       String
+  totalKarma     Int     @default(0)
+  commentKarma   Int     @default(0)
+  linkKarma      Int     @default(0)
+  accountAge     String?
+  createdUtc     DateTime?
+  verified       Boolean @default(false)
+  isPremium      Boolean @default(false)
+  avatarUrl      String?
+  
+  // Web proof data - stores raw JSON responses for verification
+  rawApiResponse String?    // Raw Reddit API response for proof
+  proofTimestamp DateTime @default(now()) // When the proof was generated
+  proofHash      String?  // Hash of the proof data for integrity
+  
+  // User relationship
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Subreddit karma breakdown
+  subredditKarma SubredditKarma[]
+
+  @@map("reddit_data")
+}
+
+model SubredditKarma {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Subreddit information
+  subreddit     String
+  commentKarma  Int    @default(0)
+  linkKarma     Int    @default(0)
+  totalKarma    Int    @default(0)
+
+  // Web proof data for this specific subreddit
+  rawKarmaData   String?    // Raw karma API response for this subreddit
+  proofTimestamp DateTime @default(now()) // When this subreddit karma was verified
+  postExamples   String?    // JSON array of example posts from this subreddit
+  commentExamples String?   // JSON array of example comments from this subreddit
+  
+  // Relationship to Reddit data
+  redditDataId String
+  redditData   RedditData @relation(fields: [redditDataId], references: [id], onDelete: Cascade)
+
+  // Unique constraint to prevent duplicate subreddit entries per user
+  @@unique([redditDataId, subreddit])
+  @@map("subreddit_karma")
+}
+
+model Verification {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Verification details
+  platform    String // "reddit", "twitter", "github", etc.
+  platformId  String // Platform-specific user ID
+  username    String
+  verifiedAt  DateTime @default(now())
+  isActive    Boolean  @default(true)
+
+  // User relationship
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Prevent duplicate verifications for the same platform
+  @@unique([userId, platform])
+  @@map("verifications")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Wallet information
+  walletAddress String? @unique
+
+  // Reddit account information
+  redditId       String? @unique
+  redditUsername String?
+  redditVerified Boolean @default(false)
+
+  // Account verification status
+  isVerified Boolean @default(false)
+
+  // Relationships
+  redditData      RedditData?
+  verifications   Verification[]
+  
+  @@map("users")
+}

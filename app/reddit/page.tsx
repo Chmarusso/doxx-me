@@ -15,23 +15,46 @@ export default function RedditOAuth() {
     // Handle OAuth callback
     const code = searchParams.get('code');
     const errorParam = searchParams.get('error');
+    const state = searchParams.get('state');
+    
+    let userId = searchParams.get('userId'); // Direct userId from URL
+    
+    // Try to get userId from state parameter (preserved through OAuth)
+    if (state && !userId) {
+      try {
+        const stateData = JSON.parse(decodeURIComponent(state));
+        userId = stateData.userId;
+        console.log('Extracted userId from state:', userId);
+      } catch (e) {
+        console.warn('Could not parse state parameter:', e);
+      }
+    }
+    
+    console.log('OAuth callback received:', { 
+      hasCode: !!code, 
+      hasError: !!errorParam, 
+      userId,
+      state 
+    });
     
     if (errorParam) {
       setError(`OAuth error: ${errorParam}`);
     } else if (code) {
-      handleOAuthCallback(code);
+      handleOAuthCallback(code, userId);
     }
   }, [searchParams]);
 
-  const handleOAuthCallback = async (code: string) => {
+  const handleOAuthCallback = async (code: string, userId?: string | null) => {
     setIsLoading(true);
     try {
+      console.log('Sending Reddit auth request:', { code: code.substring(0, 10) + '...', userId });
+      
       const response = await fetch('/api/reddit/auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, userId }),
       });
 
       const data = await response.json();
@@ -43,9 +66,9 @@ export default function RedditOAuth() {
       if (data.success && data.user) {
         setUserInfo(data.user);
         
-        // Fetch subreddit karma with access token
-        if (data.accessToken) {
-          fetchSubredditKarma(data.accessToken);
+        // Fetch subreddit karma with access token and user ID
+        if (data.accessToken && data.user.dbUserId) {
+          fetchSubredditKarma(data.accessToken, data.user.dbUserId);
         }
       } else {
         throw new Error('Invalid response from Reddit authentication');
@@ -59,7 +82,7 @@ export default function RedditOAuth() {
     }
   };
 
-  const fetchSubredditKarma = async (accessToken: string) => {
+  const fetchSubredditKarma = async (accessToken: string, userId?: string) => {
     setLoadingSubreddits(true);
     try {
       const response = await fetch('/api/reddit/subreddit-karma', {
@@ -67,7 +90,7 @@ export default function RedditOAuth() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ accessToken }),
+        body: JSON.stringify({ accessToken, userId }),
       });
 
       const data = await response.json();
@@ -93,7 +116,17 @@ export default function RedditOAuth() {
     const clientId = process.env.NEXT_PUBLIC_REDDIT_CLIENT_ID;
     const redirectUri = encodeURIComponent(process.env.NEXT_PUBLIC_REDDIT_REDIRECT_URI || `${window.location.origin}/reddit`);
     const scope = 'identity mysubreddits';
-    const state = Math.random().toString(36).substring(7); // Generate random state
+    
+    // Get userId from URL parameters to preserve it through OAuth flow
+    const userId = searchParams.get('userId');
+    console.log('Initiating Reddit OAuth with userId:', userId);
+    
+    // Include userId in state to preserve it through OAuth redirect
+    const stateData = {
+      random: Math.random().toString(36).substring(7),
+      userId: userId
+    };
+    const state = encodeURIComponent(JSON.stringify(stateData));
     
     if (!clientId) {
       setError('Reddit client ID not configured. Please check your environment variables.');
@@ -108,6 +141,7 @@ export default function RedditOAuth() {
       `duration=temporary&` +
       `scope=${scope}`;
 
+    console.log('Reddit OAuth URL:', authUrl);
     window.location.href = authUrl;
   };
 

@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import crypto from 'crypto';
 
 interface RedditPost {
   subreddit: string;
@@ -29,9 +31,9 @@ interface SubredditKarma {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { accessToken } = body;
+    const { accessToken, userId } = body;
 
-    console.log('Subreddit karma request received:', { hasAccessToken: !!accessToken });
+    console.log('Subreddit karma request received:', { hasAccessToken: !!accessToken, userId });
 
     if (!accessToken) {
       console.error('No access token provided');
@@ -91,12 +93,64 @@ export async function POST(request: NextRequest) {
       totalSubreddits: subredditKarmaArray.length,
     });
 
+    // Store subreddit karma data in database if userId is provided
+    if (userId && sortedKarmaArray.length > 0) {
+      try {
+        // Find the user's Reddit data
+        const redditData = await db.redditData.findFirst({
+          where: { userId: userId }
+        });
+
+        if (redditData) {
+          // Create hash of karma data for integrity
+          const karmaDataString = JSON.stringify(karmaData);
+          
+          // Store each subreddit's karma data
+          for (const karma of sortedKarmaArray) {
+            await db.subredditKarma.upsert({
+              where: {
+                redditDataId_subreddit: {
+                  redditDataId: redditData.id,
+                  subreddit: karma.subreddit
+                }
+              },
+              update: {
+                commentKarma: karma.commentKarma,
+                linkKarma: karma.linkKarma,
+                totalKarma: karma.totalKarma,
+                rawKarmaData: karmaDataString,
+                proofTimestamp: new Date(),
+              },
+              create: {
+                redditDataId: redditData.id,
+                subreddit: karma.subreddit,
+                commentKarma: karma.commentKarma,
+                linkKarma: karma.linkKarma,
+                totalKarma: karma.totalKarma,
+                rawKarmaData: karmaDataString,
+                proofTimestamp: new Date(),
+              },
+            });
+          }
+
+          console.log('✅ Stored subreddit karma data in database:', { 
+            redditDataId: redditData.id, 
+            subredditsStored: sortedKarmaArray.length 
+          });
+        }
+      } catch (dbError) {
+        console.error('Database storage error for subreddit karma:', dbError);
+        // Continue without failing the request
+      }
+    }
+
     return NextResponse.json({
       success: true,
       subredditKarma: sortedKarmaArray,
       totalPosts: 0, // Not available from karma endpoint
       totalComments: 0, // Not available from karma endpoint
       totalSubreddits: subredditKarmaArray.length,
+      storedInDb: !!userId,
     });
 
   } catch (error) {

@@ -1,11 +1,14 @@
 'use client'
 
 import { sdk } from "@farcaster/frame-sdk";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAccount, useConnect, useSignMessage } from "wagmi";
 import Link from "next/link";
 
 export default function Home() {
+  const [user, setUser] = useState<any>(null);
+  const [isRegistering, setIsRegistering] = useState(false);
+  
   useEffect(() => {
     sdk.actions.ready();
   }, []);
@@ -22,16 +25,147 @@ export default function Home() {
           </p>
         </div>
         
-        <div style={{ marginBottom: '24px' }}>
+        <WalletFirstFlow user={user} setUser={setUser} isRegistering={isRegistering} setIsRegistering={setIsRegistering} />
+      </div>
+    </div>
+  );
+}
+
+function WalletFirstFlow({ user, setUser, isRegistering, setIsRegistering }: any) {
+  const { isConnected, address } = useAccount();
+  const { connect, connectors } = useConnect();
+
+  useEffect(() => {
+    if (isConnected && address && !user && !isRegistering) {
+      handleUserRegistration(address);
+    }
+  }, [isConnected, address, user, isRegistering]);
+
+  const handleUserRegistration = async (walletAddress: string) => {
+    setIsRegistering(true);
+    try {
+      const response = await fetch('/api/users/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ walletAddress }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setUser(data.user);
+        console.log('✅ User registered/loaded:', data.user);
+      } else {
+        console.error('User registration failed:', data.error);
+      }
+    } catch (error) {
+      console.error('Error registering user:', error);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  if (!isConnected) {
+    return (
+      <div>
+        <p style={{ marginBottom: '24px', fontSize: '0.95rem', opacity: 0.8, textAlign: 'center' }}>
+          Connect your wallet to get started
+        </p>
+        <button 
+          type="button" 
+          onClick={() => connect({ connector: connectors[0] })}
+          className="glass-button-primary"
+          style={{ width: '100%', fontWeight: 600 }}
+        >
+          Connect Wallet
+        </button>
+      </div>
+    );
+  }
+
+  if (isRegistering) {
+    return (
+      <div style={{ textAlign: 'center', padding: '24px' }}>
+        <div style={{ 
+          width: '48px', 
+          height: '48px', 
+          border: '4px solid rgba(255,255,255,0.3)', 
+          borderTop: '4px solid white', 
+          borderRadius: '50%', 
+          animation: 'spin 1s linear infinite',
+          margin: '0 auto 16px'
+        }}></div>
+        <p style={{ opacity: 0.8 }}>Setting up your account...</p>
+      </div>
+    );
+  }
+
+  if (user) {
+    return <UserDashboard user={user} setUser={setUser} />;
+  }
+
+  return (
+    <div style={{ textAlign: 'center' }}>
+      <p style={{ color: '#fca5a5', marginBottom: '16px' }}>
+        Failed to setup account. Please try again.
+      </p>
+      <button 
+        onClick={() => handleUserRegistration(address!)}
+        className="glass-button"
+        style={{ width: '100%' }}
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function UserDashboard({ user, setUser }: any) {
+  return (
+    <div>
+      <div className="glass-card" style={{ padding: '16px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+          <h3 style={{ fontSize: '1.1rem', fontWeight: 'bold' }}>Your Account</h3>
+          <div style={{ 
+            padding: '4px 8px', 
+            borderRadius: '12px', 
+            backgroundColor: user.isVerified ? 'rgba(34, 197, 94, 0.2)' : 'rgba(156, 163, 175, 0.2)',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+          }}>
+            {user.isVerified ? '✓ Verified' : 'Unverified'}
+          </div>
+        </div>
+        <div style={{ fontSize: '0.85rem', opacity: 0.7, fontFamily: 'monospace', wordBreak: 'break-all' }}>
+          {user.walletAddress}
+        </div>
+        {user.redditConnected && (
+          <div style={{ marginTop: '12px', fontSize: '0.9rem' }}>
+            <span style={{ opacity: 0.7 }}>Reddit: </span>
+            <span style={{ fontWeight: 500 }}>u/{user.redditUsername}</span>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginBottom: '24px' }}>
+        {user.redditConnected ? (
           <Link href="/reddit" style={{ textDecoration: 'none' }}>
+            <button className="glass-button" style={{ width: '100%', marginBottom: '16px' }}>
+              📊 View Reddit Data
+            </button>
+          </Link>
+        ) : (
+          <Link href={`/reddit?userId=${user.id}`} style={{ textDecoration: 'none' }}>
             <button className="glass-button-primary" style={{ width: '100%', marginBottom: '16px' }}>
               🔗 Connect Reddit Account
             </button>
           </Link>
-        </div>
-        
-        <ConnectMenu />
+        )}
       </div>
+      
+      <ConnectMenu />
     </div>
   );
 }
