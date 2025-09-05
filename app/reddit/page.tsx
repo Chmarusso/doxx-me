@@ -1,9 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function RedditOAuth() {
+function RedditOAuthContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [subredditKarma, setSubredditKarma] = useState<any>(null);
@@ -255,7 +255,7 @@ export default function RedditOAuth() {
               </div>
             ) : subredditKarma?.subredditKarma?.length > 0 ? (
               <div>
-                {subredditKarma.subredditKarma.map((karma: any, index: number) => (
+                {subredditKarma.subredditKarma.map((karma: any) => (
                   <div 
                     key={karma.subreddit} 
                     style={{ 
@@ -353,5 +353,28 @@ export default function RedditOAuth() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RedditOAuth() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div className="glass-card" style={{ maxWidth: '400px', width: '100%', padding: '32px', textAlign: 'center' }}>
+          <div style={{ 
+            width: '48px', 
+            height: '48px', 
+            border: '4px solid rgba(255,255,255,0.3)', 
+            borderTop: '4px solid white', 
+            borderRadius: '50%', 
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }}></div>
+          <p style={{ opacity: 0.8 }}>Loading...</p>
+        </div>
+      </div>
+    }>
+      <RedditOAuthContent />
+    </Suspense>
   );
 }

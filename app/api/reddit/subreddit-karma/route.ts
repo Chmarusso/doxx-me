@@ -1,32 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import crypto from 'crypto';
-
-interface RedditPost {
-  subreddit: string;
-  score: number;
-  title: string;
-  created_utc: number;
-  permalink: string;
-  num_comments: number;
-}
-
-interface RedditComment {
-  subreddit: string;
-  score: number;
-  body: string;
-  created_utc: number;
-  permalink: string;
-}
-
-interface SubredditKarma {
-  subreddit: string;
-  postKarma: number;
-  commentKarma: number;
-  totalKarma: number;
-  postCount: number;
-  commentCount: number;
-}
 
 export async function POST(request: NextRequest) {
   try {
