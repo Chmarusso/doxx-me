@@ -21,9 +21,45 @@ export default function RootLayout({
         <title>Create Mini App</title>
       </head>
       <body>
+        <div className="floating-shapes">
+          <div className="floating-shape" style={{ 
+            width: '288px', 
+            height: '288px', 
+            top: '40px', 
+            left: '40px', 
+            opacity: 0.2,
+            animation: 'float 6s ease-in-out infinite'
+          }}></div>
+          <div className="floating-shape" style={{ 
+            width: '384px', 
+            height: '384px', 
+            top: '33%', 
+            right: '80px', 
+            opacity: 0.15,
+            animation: 'float 6s ease-in-out 2s infinite'
+          }}></div>
+          <div className="floating-shape" style={{ 
+            width: '256px', 
+            height: '256px', 
+            bottom: '80px', 
+            left: '25%', 
+            opacity: 0.1,
+            animation: 'pulse-glow 4s ease-in-out infinite'
+          }}></div>
+          <div className="floating-shape" style={{ 
+            width: '320px', 
+            height: '320px', 
+            bottom: '40px', 
+            right: '40px', 
+            opacity: 0.2,
+            animation: 'float 6s ease-in-out infinite'
+          }}></div>
+        </div>
         <WagmiProvider config={config}>
           <QueryClientProvider client={queryClient}>
-            {children}
+            <div style={{ minHeight: '100vh', position: 'relative', zIndex: 10 }}>
+              {children}
+            </div>
           </QueryClientProvider>
         </WagmiProvider>
       </body>
