@@ -89,6 +89,116 @@ model Verification {
   @@map("verifications")
 }
 
+model GitHubData {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Basic GitHub profile
+  githubId      String  @unique
+  username      String
+  name          String?
+  email         String?
+  bio           String?
+  company       String?
+  location      String?
+  blog          String?
+  avatarUrl     String?
+  followers     Int     @default(0)
+  following     Int     @default(0)
+  publicRepos   Int     @default(0)
+  accountAge    String?
+  createdUtc    DateTime?
+  
+  // Web proof data - stores raw GraphQL responses for verification
+  rawApiResponse String?    // Raw GitHub GraphQL API response for proof
+  proofTimestamp DateTime @default(now()) // When the proof was generated
+  proofHash      String?  // Hash of the proof data for integrity
+  
+  // User relationship
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Repository contributions
+  repositoryContributions RepositoryContribution[]
+
+  @@map("github_data")
+}
+
+model RepositoryContribution {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Repository identification
+  repositoryName  String
+  repositoryOwner String
+  repositoryUrl   String?
+  repositoryId    String? // GitHub repository ID for verification
+  
+  // User-specific contribution metrics for THIS repository
+  prsCreated      Int @default(0)
+  prsMerged       Int @default(0)
+  prsOpen         Int @default(0)
+  prsClosed       Int @default(0)
+  issuesOpened    Int @default(0)
+  issuesClosed    Int @default(0)
+  commitsCount    Int @default(0)
+  linesAdded      Int @default(0)
+  linesDeleted    Int @default(0)
+  
+  // Web proof data for this specific repository
+  rawGraphQLResponse String?    // Raw GraphQL response for this repository
+  proofTimestamp DateTime @default(now()) // When this repository data was verified
+  contributionExamples String?   // JSON array of example PRs/commits from this repository
+  
+  // Relationship to GitHub data
+  githubDataId String
+  githubData   GitHubData @relation(fields: [githubDataId], references: [id], onDelete: Cascade)
+
+  // Unique constraint to prevent duplicate repository entries per user
+  @@unique([githubDataId, repositoryName, repositoryOwner])
+  @@map("repository_contributions")
+}
+
+model GolemAttestation {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Golem attestation core fields
+  entityKey        String   // The entity key for this attestation
+  expirationBlock  BigInt   // Block number when this attestation expires
+  issuedAt         DateTime @default(now()) // When the attestation was issued
+  
+  // Attestation metadata
+  platform         String   // "reddit", "github", etc.
+  attestationType  String   // "karma", "contributions", "profile", etc.
+  status           String   @default("active") // "active", "expired", "revoked"
+  
+  // Raw data storage - complete API responses
+  rawApiData       String   // JSON string of complete API response
+  processedData    String?  // JSON string of processed/normalized data
+  proofHash        String?  // Hash of the proof data for integrity verification
+  
+  // Metadata for verification
+  apiEndpoint      String?  // Which API endpoint was called
+  requestParams    String?  // JSON string of request parameters used
+  responseHeaders  String?  // JSON string of relevant response headers
+  
+  // User relationship
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Indexes for efficient queries
+  @@index([entityKey])
+  @@index([expirationBlock])
+  @@index([platform, attestationType])
+  @@index([userId, platform])
+  @@unique([userId, entityKey, platform]) // Prevent duplicate attestations
+  @@map("golem_attestations")
+}
+
 model User {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -102,12 +212,19 @@ model User {
   redditUsername String?
   redditVerified Boolean @default(false)
 
+  // GitHub account information
+  githubId       String? @unique
+  githubUsername String?
+  githubVerified Boolean @default(false)
+
   // Account verification status
   isVerified Boolean @default(false)
 
   // Relationships
-  redditData      RedditData?
-  verifications   Verification[]
+  redditData        RedditData?
+  githubData        GitHubData?
+  verifications     Verification[]
+  golemAttestations GolemAttestation[]
   
   @@map("users")
 }
