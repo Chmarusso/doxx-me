@@ -13,12 +13,30 @@ export default function RootLayout({
 }) {
   const [queryClient] = useState(() => new QueryClient());
 
+  const embedMeta = {
+    "version": "1",
+    "imageUrl": "https://doxx-me.vercel.app/frame-og.jpg",
+    "button": {
+      "title": "Doxx Me",
+      "action": {
+        "type": "launch_frame",
+        "name": "Doxx Me",
+        "url": "https://doxx-me.vercel.app",
+        "splashImageUrl": "https://doxx-me.vercel.app/app.png",
+        "splashBackgroundColor": "#000000"
+      }
+    }
+  }
+
   return (
     <html lang="en">
       <head>
         <meta charSet="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Doxx Me - Prove Your Online Identity</title>
+
+        <meta name="fc:miniapp" content={JSON.stringify(embedMeta)} />
+        <meta name="fc:frame" content={JSON.stringify(embedMeta)} />
         
         {/* Primary Meta Tags */}
         <meta name="title" content="Doxx Me - Prove Your Online Identity" />
