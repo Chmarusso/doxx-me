@@ -4,13 +4,16 @@ Prove your online identity with wallet authentication.
 
 Connect your wallet and verify your Reddit karma, account age, and social proof. Data is cryptographically signed and stored as attestion in Golem DB. 
 
+[Base App link](https://doxx-me.vercel.app)
+[Admin panel for verifiers](https://doxx-me.vercel.app/verifier)
+
 Built for 💜 [ETHWarsaw hackathon](https://www.ethwarsaw.dev/hackathon)
 
 ## Tech Stack
 
-- **GolemDB**: Decentralized data storage for identity proofs
-- **Base**: mini app sdk  
-- **Civic**: Authentication for verifier panel
+- [GolemDB](https://www.golem.network/) flexible way of storing and retrieving attestation from chain 
+- [Civic](https://www.civic.com/) for authentication of panel for verifiers
+- [Base App](https://www.base.org/) to allow UX friendly creation of attestations straight from your Base / Farcaster app 
 
 ## Features
 
