@@ -9,9 +9,9 @@
     "subtitle": "Prove your online to others",
     "description": "Prove your online identity with wallet authentication.",
     "screenshotUrls": [
-      "https://rewards.warpcast.com/screenshot1.png",
-      "https://rewards.warpcast.com/screenshot2.png",
-      "https://rewards.warpcast.com/screenshot3.png"
+      "https://doxx-me.vercel.app/screenshot1.png",
+      "https://doxx-me.vercel.app/screenshot2.png",
+      "https://doxx-me.vercel.app/screenshot3.png"
     ],
     "primaryCategory": "utility",
     "tags": [
@@ -21,9 +21,9 @@
       "identity"
     ],
     "heroImageUrl": "https://rewards.warpcast.com/og.png",
-    "tagline": "Top Warpcast creators",
+    "tagline": "Doxx your stuff",
     "ogTitle": "Doxx Me",
     "ogDescription": "Prove your online identity with wallet authentication.",
-    "ogImageUrl": "https://rewards.warpcast.com/og.png"
+    "ogImageUrl": "https://doxx-me.vercel.app/frame-og.jpg"
   }
 }

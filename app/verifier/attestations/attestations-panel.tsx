@@ -144,7 +144,7 @@ export default function AttestationsPanel() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
             <div>
               <h1 style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '8px' }}>
-                🔗 Golem Attestations
+                🔗 GolemDB Attestations
               </h1>
               <p style={{ opacity: 0.7 }}>
                 Monitor and verify blockchain-stored attestations
