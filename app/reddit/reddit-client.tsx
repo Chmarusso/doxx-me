@@ -37,7 +37,26 @@ export default function RedditClient({ mode, userId, code, error }: RedditClient
         throw new Error(data.error || 'Failed to authenticate with Reddit');
       }
 
-      if (data.success && data.user) {
+      if (data.success && data.user && data.accessToken) {
+        // Now fetch subreddit karma data
+        console.log('Fetching subreddit karma data...');
+        const karmaResponse = await fetch('/api/reddit/subreddit-karma', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ 
+            accessToken: data.accessToken, 
+            userId: userId 
+          }),
+        });
+
+        if (karmaResponse.ok) {
+          console.log('Subreddit karma data fetched successfully');
+        } else {
+          console.warn('Failed to fetch subreddit karma data, but proceeding with auth');
+        }
+
         // Redirect to reddit page to show the data
         window.location.href = '/reddit';
       } else {

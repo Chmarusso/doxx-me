@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { GolemService } from './golem';
 import crypto from 'crypto';
 
 interface RedditUserData {
@@ -232,6 +233,16 @@ export class RedditService {
       });
     }
 
+    // Create Golem attestation for Reddit verification
+    try {
+      console.log('Creating Golem attestation for Reddit user:', userData.name);
+      await GolemService.createRedditAttestation(user.id, userData);
+      console.log('Golem attestation created successfully');
+    } catch (error) {
+      console.error('Failed to create Golem attestation for Reddit:', error);
+      // Don't fail the whole authentication if attestation fails
+    }
+
     return {
       user,
       accessToken: tokenData.access_token,
@@ -288,6 +299,43 @@ export class RedditService {
             },
           });
         }
+      }
+    }
+
+    // Create Golem attestation for subreddit karma data
+    if (sortedKarmaArray.length > 0) {
+      try {
+        console.log('Creating Golem attestation for subreddit karma data');
+        const user = await db.user.findUnique({ where: { id: userId } });
+        if (user && user.redditUsername) {
+          // Store on blockchain first to get proper receipt
+          const blockchainReceipt = await GolemService.storeVerificationData(
+            `user:${userId}`,
+            'reddit',
+            { 
+              username: user.redditUsername,
+              subredditKarma: sortedKarmaArray, 
+              totalSubreddits: subredditKarmaArray.length,
+              verificationType: 'subreddit_karma'
+            }
+          );
+
+          // Then store in database using blockchain receipt data
+          await GolemService.createDatabaseAttestation({
+            entityKey: blockchainReceipt.entityKey,
+            expirationBlock: BigInt(blockchainReceipt.expirationBlock),
+            platform: 'reddit',
+            attestationType: 'subreddit_karma',
+            rawApiData: karmaData,
+            processedData: { subredditKarma: sortedKarmaArray, totalSubreddits: subredditKarmaArray.length },
+            apiEndpoint: 'reddit.com/api/v1/me/karma',
+            userId: userId
+          });
+          console.log('Golem attestation for subreddit karma created successfully');
+        }
+      } catch (error) {
+        console.error('Failed to create Golem attestation for subreddit karma:', error);
+        // Don't fail the whole process if attestation fails
       }
     }
 
