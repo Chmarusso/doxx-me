@@ -1,12 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    // Enable if needed for specific features
+    serverComponentsExternalPackages: ['@prisma/client'],
   },
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
     return config;
   },
+  // Ensure Prisma client is properly handled in serverless environments
+  output: 'standalone',
 };
 
 module.exports = nextConfig;

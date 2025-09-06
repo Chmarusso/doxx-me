@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
+    "postinstall": "prisma generate",
     "lint": "biome check app",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
@@ -39,6 +40,7 @@
     "autoprefixer": "^10.4.21",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.13",
+    "tsx": "^4.7.0",
     "typescript": "^5.8.3"
   }
 }
