@@ -1,55 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { isAddress } from 'viem';
+import { UserService } from '@/lib/services/user';
 
 export async function POST(request: NextRequest) {
   try {
-    const { walletAddress } = await request.json();
+    const body = await request.json();
+    const result = await UserService.checkUserExists(body);
 
-    if (!walletAddress || !isAddress(walletAddress)) {
-      return NextResponse.json(
-        { error: 'Invalid wallet address' },
-        { status: 400 }
-      );
-    }
-
-    const user = await db.user.findUnique({
-      where: { 
-        walletAddress: walletAddress.toLowerCase()
-      },
-      include: {
-        redditData: true,
-        verifications: true
-      }
+    const response = NextResponse.json({
+      success: true,
+      ...result
     });
 
-    if (user) {
-      const userData = {
-        id: user.id,
-        walletAddress: user.walletAddress,
-        isVerified: user.isVerified,
-        redditConnected: !!user.redditData,
-        redditUsername: user.redditData?.username,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt
-      };
-
-      return NextResponse.json({
-        success: true,
-        userExists: true,
-        user: userData
-      });
-    } else {
-      return NextResponse.json({
-        success: true,
-        userExists: false
+    // Set httpOnly cookie for user session if user exists
+    if (result.userExists && result.user) {
+      response.cookies.set('userId', result.user.id, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60, // 7 days
+        path: '/'
       });
     }
+
+    return response;
   } catch (error) {
     console.error('Error checking user:', error);
+    
+    const statusCode = error instanceof Error && error.message.includes('Invalid') ? 400 : 500;
+    
     return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
+      { error: error instanceof Error ? error.message : 'Internal server error' },
+      { status: statusCode }
     );
   }
 }
