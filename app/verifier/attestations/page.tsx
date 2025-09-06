@@ -25,5 +25,5 @@ export default async function AttestationsPage() {
     );
   }
 
-  return <AttestationsPanel user={user} />;
+  return <AttestationsPanel />;
 }

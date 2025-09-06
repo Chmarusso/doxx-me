@@ -31,7 +31,7 @@ interface AttestationStats {
   activeAttestations: number;
 }
 
-export default function AttestationsPanel({ user }: { user: any }) {
+export default function AttestationsPanel() {
   const [attestations, setAttestations] = useState<GolemAttestation[]>([]);
   const [filteredAttestations, setFilteredAttestations] = useState<GolemAttestation[]>([]);
   const [loading, setLoading] = useState(true);

@@ -256,8 +256,6 @@ export class GolemService {
    * Create attestation from Reddit data and store on blockchain
    */
   static async createRedditAttestation(userId: string, redditData: any, subredditKarma?: any[]) {
-    const entityKey = `reddit:${redditData.username}`;
-    const expirationBlock = BigInt(Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)); // 1 year
     
     const processedData = {
       username: redditData.username,
@@ -298,8 +296,6 @@ export class GolemService {
    * Create attestation from GitHub data and store on blockchain
    */
   static async createGitHubAttestation(userId: string, githubData: any, repositoryContributions?: any[]) {
-    const entityKey = `github:${githubData.login}`;
-    const expirationBlock = BigInt(Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)); // 1 year
     
     const processedData = {
       username: githubData.login,

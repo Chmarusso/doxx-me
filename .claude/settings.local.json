@@ -9,7 +9,10 @@
       "Bash(npm run dev:*)",
       "Bash(npm run:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebFetch(domain:docs.github.com)",
+      "Bash(npx prisma generate:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []
