@@ -1,29 +1,23 @@
 # Doxx Me
 
-Prove your online identity with wallet authentication. Built for **ETHWarsaw 2025 hackathon**.
+Prove your online identity with wallet authentication. 
 
-Connect your wallet and verify your Reddit karma, account age, and social proof. Data is cryptographically signed and stored on-chain.
+Connect your wallet and verify your Reddit karma, account age, and social proof. Data is cryptographically signed and stored as attestion in Golem DB. 
+
+Built for 💜 [ETHWarsaw hackathon](https://www.ethwarsaw.dev/hackathon)
 
 ## Tech Stack
 
 - **GolemDB**: Decentralized data storage for identity proofs
-- **Base**: Farcaster mini app integration  
-- **Civic**: Identity verification (planned)
+- **Base**: mini app sdk  
+- **Civic**: Authentication for verifier panel
 
 ## Features
 
 - **Wallet Authentication**: Connect MetaMask or Farcaster wallets
-- **Reddit Verification**: Prove karma scores and account history  
+- **Reddit Verification**: Prove karma scores and account histor
+- **Github Verification**: Prove your impact on specific repositories 
 - **On-Chain Storage**: GolemDB integration for decentralized identity
-
-## Quick Start
-
-```bash
-npm install
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) to start proving your identity.
 
 ## Deployment
 
@@ -41,13 +35,16 @@ Required variables:
 - `REDDIT_CLIENT_SECRET`: Reddit OAuth secret
 - `NEXTAUTH_SECRET`: Random secret for session encryption
 
-### Vercel Deployment
+## Quick Start
 
-1. Connect your repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy - Prisma will auto-generate during build
+```bash
+npm install
+npm run dev
+```
 
-### Database Setup
+Open [http://localhost:3000](http://localhost:3000) to start proving your identity.
+
+## Database Setup
 
 ```bash
 npm run db:push    # Push schema to database
