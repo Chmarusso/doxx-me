@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="400" viewBox="0 0 1200 400" role="img" aria-label="DoxxMe logotype">
+  <defs>
+    <style>
+      .word { font-family: Inter, Segoe UI, Roboto, Arial, sans-serif; font-size: 160px; font-weight: 800; letter-spacing: 0.5px; }
+      .subtle { font-family: Inter, Segoe UI, Roboto, Arial, sans-serif; font-size: 40px; font-weight: 500; letter-spacing: 1px; opacity: 0.6; }
+    </style>
+  </defs>
+  <rect width="1200" height="400" fill="#FFFFFF" rx="24" ry="24"/>
+
+  <g transform="translate(60,80.0)">
+    <path d="M120 0 C160 20 200 20 240 10 C240 100 220 160 120 220 C20 160 0 100 0 10 C40 20 80 20 120 0 Z"
+          fill="#2563EB" opacity="0.95"/>
+    <!-- Check mark -->
+    <path d="M65 120 L110 165 L185 85" fill="none" stroke="#10B981" stroke-width="24" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="340" y="250.0" class="word" fill="#0F172A">Doxx<tspan fill="#2563EB">Me</tspan></text>
+  <text x="340" y="304.0" class="subtle" fill="#0F172A">Verify the web, prove it to others</text>
+</svg>

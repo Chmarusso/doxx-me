@@ -1,1 +1,29 @@
-{}
+{
+  "miniapp": {
+    "version": "1",
+    "name": "Doxx Me",
+    "iconUrl": "https://doxx-me.vercel.app/app.png",
+    "splashImageUrl": "https://doxx-me.vercel.app/logo.png",
+    "splashBackgroundColor": "#000000",
+    "homeUrl": "https://doxx-me.vercel.app",
+    "subtitle": "Prove your online to others",
+    "description": "Prove your online identity with wallet authentication.",
+    "screenshotUrls": [
+      "https://rewards.warpcast.com/screenshot1.png",
+      "https://rewards.warpcast.com/screenshot2.png",
+      "https://rewards.warpcast.com/screenshot3.png"
+    ],
+    "primaryCategory": "utility",
+    "tags": [
+      "creators",
+      "verification",
+      "doxxing",
+      "identity"
+    ],
+    "heroImageUrl": "https://rewards.warpcast.com/og.png",
+    "tagline": "Top Warpcast creators",
+    "ogTitle": "Doxx Me",
+    "ogDescription": "Prove your online identity with wallet authentication.",
+    "ogImageUrl": "https://rewards.warpcast.com/og.png"
+  }
+}
