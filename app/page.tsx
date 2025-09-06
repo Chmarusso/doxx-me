@@ -80,6 +80,12 @@ function WalletFirstFlow({ user, setUser, isRegistering, setIsRegistering }: any
     try {
       await signMessage({ message }, {
         onSuccess: async (signature) => {
+          console.log('🔍 Client-side signature debug:', {
+            signatureLength: signature.length,
+            signatureFormat: signature.startsWith('0x') ? 'hex' : 'unknown',
+            signaturePreview: signature.substring(0, 20) + '...',
+            walletAddress: address
+          });
           await handleUserRegistration(address, message, signature);
         },
         onError: (error) => {

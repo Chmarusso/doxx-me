@@ -17,7 +17,7 @@ export default function RootLayout({
     "version": "1",
     "imageUrl": "https://doxx-me.vercel.app/frame-og.jpg",
     "button": {
-      "title": "Doxx Me - verify stuff with zkTLS",
+      "title": "Doxx Me - prove stuff with zkTLS",
       "action": {
         "type": "launch_frame",
         "name": "Try now",
