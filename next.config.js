@@ -1,8 +1,8 @@
+const { createCivicAuthPlugin } = require("@civic/auth-web3/nextjs");
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    serverComponentsExternalPackages: ['@prisma/client'],
-  },
+  serverExternalPackages: ['@prisma/client'],
   webpack: (config) => {
     config.externals.push('pino-pretty', 'lokijs', 'encoding');
     return config;
@@ -11,4 +11,12 @@ const nextConfig = {
   output: 'standalone',
 };
 
-module.exports = nextConfig;
+const withCivicAuth = createCivicAuthPlugin({
+  clientId: "8ddee218-4e5d-49c5-b13b-c84820a31384",
+  include: ["/verifier/*", "/admin/*", "/api/verifier/*"],
+  loginUrl: "/verifier/login",
+  loginSuccessUrl: "/verifier/dashboard",
+  logoutUrl: "/verifier/login"
+});
+
+module.exports = withCivicAuth(nextConfig);
