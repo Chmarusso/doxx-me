@@ -17,10 +17,10 @@ export default function RootLayout({
     "version": "1",
     "imageUrl": "https://doxx-me.vercel.app/frame-og.jpg",
     "button": {
-      "title": "Doxx Me",
+      "title": "Doxx Me - verify stuff with zkTLS",
       "action": {
         "type": "launch_frame",
-        "name": "Doxx Me",
+        "name": "Try now",
         "url": "https://doxx-me.vercel.app",
         "splashImageUrl": "https://doxx-me.vercel.app/app.png",
         "splashBackgroundColor": "#000000"
