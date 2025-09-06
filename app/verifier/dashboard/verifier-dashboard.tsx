@@ -7,12 +7,22 @@ interface VerifiedUser {
   id: string;
   walletAddress: string;
   redditUsername?: string;
+  githubUsername?: string;
   redditData?: {
     totalKarma: number;
     commentKarma: number;
     linkKarma: number;
     accountAge: string;
     verified: boolean;
+  };
+  githubData?: {
+    username: string;
+    name?: string;
+    followers: number;
+    following: number;
+    publicRepos: number;
+    accountAge: string;
+    repositoryContributions: number;
   };
   isVerified: boolean;
   createdAt: string;
@@ -24,7 +34,9 @@ export default function VerifierDashboard({ user }: { user: any }) {
   const [stats, setStats] = useState({
     totalUsers: 0,
     redditConnected: 0,
-    avgKarma: 0
+    githubConnected: 0,
+    avgKarma: 0,
+    avgRepos: 0
   });
 
   useEffect(() => {
@@ -61,6 +73,25 @@ export default function VerifierDashboard({ user }: { user: any }) {
               </p>
             </div>
             <UserButton />
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="glass-card" style={{ padding: '20px', marginBottom: '24px' }}>
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '16px' }}>
+            Quick Actions
+          </h3>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <a href="/verifier/attestations" style={{ textDecoration: 'none' }}>
+              <button className="glass-button-primary" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                🔗 View Attestations
+              </button>
+            </a>
+            <a href="/verifier/debug" style={{ textDecoration: 'none' }}>
+              <button className="glass-button">
+                🐛 Debug Tools
+              </button>
+            </a>
           </div>
         </div>
 

@@ -14,12 +14,17 @@ export async function GET(_request: NextRequest) {
       );
     }
 
-    // Fetch all users with their Reddit data
+    // Fetch all users with their Reddit and GitHub data
     const users = await db.user.findMany({
       include: {
         redditData: {
           include: {
             subredditKarma: true
+          }
+        },
+        githubData: {
+          include: {
+            repositoryContributions: true
           }
         },
         verifications: true
@@ -32,22 +37,37 @@ export async function GET(_request: NextRequest) {
     // Calculate stats
     const totalUsers = users.length;
     const redditConnected = users.filter(user => user.redditData).length;
+    const githubConnected = users.filter(user => user.githubData).length;
     const avgKarma = users
       .filter(user => user.redditData?.totalKarma)
       .reduce((acc, user) => acc + (user.redditData?.totalKarma || 0), 0) / 
       Math.max(redditConnected, 1);
+    const avgRepos = users
+      .filter(user => user.githubData?.publicRepos)
+      .reduce((acc, user) => acc + (user.githubData?.publicRepos || 0), 0) / 
+      Math.max(githubConnected, 1);
 
     // Transform users for frontend
     const transformedUsers = users.map(user => ({
       id: user.id,
       walletAddress: user.walletAddress,
       redditUsername: user.redditUsername,
+      githubUsername: user.githubUsername,
       redditData: user.redditData ? {
         totalKarma: user.redditData.totalKarma,
         commentKarma: user.redditData.commentKarma,
         linkKarma: user.redditData.linkKarma,
         accountAge: user.redditData.accountAge,
         verified: user.redditData.verified,
+      } : null,
+      githubData: user.githubData ? {
+        username: user.githubData.username,
+        name: user.githubData.name,
+        followers: user.githubData.followers,
+        following: user.githubData.following,
+        publicRepos: user.githubData.publicRepos,
+        accountAge: user.githubData.accountAge,
+        repositoryContributions: user.githubData.repositoryContributions.length,
       } : null,
       isVerified: user.isVerified,
       createdAt: user.createdAt.toISOString(),
@@ -59,7 +79,9 @@ export async function GET(_request: NextRequest) {
       stats: {
         totalUsers,
         redditConnected,
-        avgKarma
+        githubConnected,
+        avgKarma,
+        avgRepos
       },
       verifier: {
         name: civicUser.name || civicUser.email,
