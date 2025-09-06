@@ -6,6 +6,7 @@ Connect your wallet and verify your Reddit karma, account age, and social proof.
 
 - [Base App link](https://doxx-me.vercel.app)
 - [Admin panel for verifiers](https://doxx-me.vercel.app/verifier)
+- [Video Demo](https://www.youtube.com/watch?v=OW_aUWIZPPM)
 
 ![screenshot-app](https://github.com/user-attachments/assets/025b320e-ff65-4a2f-9b59-4203f5e0361e)
 
