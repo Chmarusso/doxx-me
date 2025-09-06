@@ -251,7 +251,7 @@ export default function GitHubClient({ mode, initialData, code, userId, error }:
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         {/* User Profile Card */}
         <div className="glass-card" style={{ padding: '32px', marginBottom: '32px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginBottom: '24px', flexWrap: 'wrap' }}>
             {githubUser.avatarUrl && (
               <img 
                 src={githubUser.avatarUrl} 
@@ -333,7 +333,7 @@ export default function GitHubClient({ mode, initialData, code, userId, error }:
             </div>
           )}
 
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
             <input
               type="text"
               value={repositoryInput}
@@ -341,6 +341,7 @@ export default function GitHubClient({ mode, initialData, code, userId, error }:
               placeholder="owner/repository (e.g., facebook/react)"
               style={{
                 flex: 1,
+                minWidth: '200px',
                 padding: '12px 16px',
                 borderRadius: '8px',
                 border: '1px solid rgba(255,255,255,0.3)',
@@ -379,7 +380,7 @@ export default function GitHubClient({ mode, initialData, code, userId, error }:
                   className="glass-card"
                   style={{ padding: '20px' }}
                 >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>
                       {contribution.repository}
                     </h3>
@@ -388,7 +389,7 @@ export default function GitHubClient({ mode, initialData, code, userId, error }:
                     </div>
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: '12px' }}>
                     <div style={{ textAlign: 'center' }}>
                       <div style={{ fontSize: '1.3rem', fontWeight: 'bold', color: '#10b981' }}>{contribution.mergedPRs}</div>
                       <div style={{ opacity: 0.7, fontSize: '0.8rem' }}>Merged PRs</div>

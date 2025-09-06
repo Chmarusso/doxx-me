@@ -218,7 +218,7 @@ export default async function RedditPage({ searchParams }: {
                         {karma.totalKarma.toLocaleString()}
                       </span>
                     </div>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.7, display: 'flex', gap: '12px' }}>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.7, display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                       <span>📝 Link Karma: {karma.linkKarma.toLocaleString()}</span>
                       <span>💬 Comment Karma: {karma.commentKarma.toLocaleString()}</span>
                     </div>

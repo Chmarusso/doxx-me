@@ -1,17 +1,139 @@
 'use client'
 
-import { sdk } from "@farcaster/frame-sdk";
 import { useEffect, useState } from "react";
-import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
+import { useMiniKit, useAuthenticate } from '@coinbase/onchainkit/minikit';
+
 import Link from "next/link";
 
 export default function Home() {
   const [user, setUser] = useState<any>(null);
   const [isRegistering, setIsRegistering] = useState(false);
-  
+  const { setFrameReady, isFrameReady, context } = useMiniKit();
+  const { signIn } = useAuthenticate();
+  const [verifiedUser, setVerifiedUser] = useState<any>(null);
+
+  // Auto-trigger authentication when context is available but we don't have verified user
   useEffect(() => {
-    sdk.actions.ready();
-  }, []);
+    if (context?.user && !verifiedUser && !isRegistering) {
+      handleAuthenticate();
+    }
+  }, [context?.user, verifiedUser, isRegistering]);
+
+  useEffect(() => {
+    if (!isFrameReady) {
+      setFrameReady();
+    }
+  }, [isFrameReady, setFrameReady]);
+
+  useEffect(() => {
+    // Check if user is already authenticated via SIWF
+    if (verifiedUser && !user && !isRegistering) {
+      checkOrCreateUser(verifiedUser);
+    }
+  }, [verifiedUser, user, isRegistering]);
+
+  const handleAuthenticate = async () => {
+    try {
+      console.log('✅ MiniKit context:', context);
+      const result = await signIn();
+      if (result) {
+        console.log('✅ Sign in successful:', result);
+        // Use the verified result from signIn for authentication
+        setVerifiedUser(result);
+      }
+    } catch (error) {
+      console.error('Sign in failed:', error);
+    }
+  };
+
+  const parseWalletFromSIWE = (message: string): string | null => {
+    const match = message.match(/Ethereum account:\n(0x[a-fA-F0-9]{40})/);
+    return match ? match[1] : null;
+  };
+
+  const checkOrCreateUser = async (authenticatedUser: any) => {
+    setIsRegistering(true);
+    console.log('✅ Checking or creating user:', authenticatedUser, context);
+    try {
+      // Use the verified user data from SIWF authentication
+      let walletAddress = authenticatedUser.address || authenticatedUser.wallet?.address;
+      
+      // If no direct address, try to parse from SIWE message
+      if (!walletAddress && authenticatedUser.message) {
+        walletAddress = parseWalletFromSIWE(authenticatedUser.message);
+      }
+      
+      const fid = authenticatedUser.fid || context?.user?.fid;
+      
+      if (!walletAddress) {
+        console.error('No wallet address found in authenticated user');
+        return;
+      }
+
+      const response = await fetch('/api/users/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          walletAddress,
+          fid,
+          authMethod: 'siwf'
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.userExists) {
+        setUser(data.user);
+        console.log('✅ User loaded:', data.user);
+      } else {
+        // Create user with SIWF authentication
+        await createUserWithSIWF(authenticatedUser);
+      }
+    } catch (error) {
+      console.error('Error checking user:', error);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const createUserWithSIWF = async (authenticatedUser: any) => {
+    try {
+      let walletAddress = authenticatedUser.address || authenticatedUser.wallet?.address;
+      
+      // If no direct address, try to parse from SIWE message
+      if (!walletAddress && authenticatedUser.message) {
+        walletAddress = parseWalletFromSIWE(authenticatedUser.message);
+      }
+      
+      const fid = authenticatedUser.fid || context?.user?.fid;
+      
+      const response = await fetch('/api/users/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          walletAddress,
+          fid,
+          authMethod: 'siwf',
+          verifiedUser: authenticatedUser
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setUser(data.user);
+        console.log('✅ User created with SIWF:', data.user);
+      } else {
+        console.error('User registration failed:', data.error);
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+    }
+  };
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
@@ -25,166 +147,21 @@ export default function Home() {
           </p>
         </div>
         
-        <WalletFirstFlow user={user} setUser={setUser} isRegistering={isRegistering} setIsRegistering={setIsRegistering} />
+        <BaseAuthFlow 
+          user={user} 
+          setUser={setUser} 
+          isRegistering={isRegistering} 
+          verifiedUser={verifiedUser}
+          context={context}
+          onAuthenticate={handleAuthenticate}
+        />
       </div>
     </div>
   );
 }
 
-function WalletFirstFlow({ user, setUser, isRegistering, setIsRegistering }: any) {
-  const { isConnected, address } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { signMessage, isPending: isSigningPending } = useSignMessage();
-  const [needsSignature, setNeedsSignature] = useState(false);
-  const [isCheckingUser, setIsCheckingUser] = useState(false);
-
-  useEffect(() => {
-    if (isConnected && address && !user && !isRegistering) {
-      checkUserOrRequestSignature(address);
-    }
-  }, [isConnected, address, user, isRegistering]);
-
-  const checkUserOrRequestSignature = async (walletAddress: string) => {
-    setIsCheckingUser(true);
-    try {
-      const response = await fetch('/api/users/check', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ walletAddress }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.userExists) {
-        setUser(data.user);
-        console.log('✅ User loaded:', data.user);
-      } else {
-        setNeedsSignature(true);
-      }
-    } catch (error) {
-      console.error('Error checking user:', error);
-      setNeedsSignature(true);
-    } finally {
-      setIsCheckingUser(false);
-    }
-  };
-
-  const handleSignAndRegister = async () => {
-    if (!address) return;
-    
-    const message = `Welcome to Doxx Me!\n\nPlease sign this message to verify wallet ownership and create your account.\n\nWallet: ${address}\nTimestamp: ${new Date().toISOString()}`;
-    
-    try {
-      await signMessage({ message }, {
-        onSuccess: async (signature) => {
-          console.log('🔍 Client-side signature debug:', {
-            signatureLength: signature.length,
-            signatureFormat: signature.startsWith('0x') ? 'hex' : 'unknown',
-            signaturePreview: signature.substring(0, 20) + '...',
-            walletAddress: address
-          });
-          await handleUserRegistration(address, message, signature);
-        },
-        onError: (error) => {
-          console.error('Error signing message:', error);
-        }
-      });
-    } catch (error) {
-      console.error('Error signing message:', error);
-    }
-  };
-
-  const handleUserRegistration = async (walletAddress: string, message: string, signature: string) => {
-    setIsRegistering(true);
-    try {
-      const response = await fetch('/api/users/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ walletAddress, message, signature }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        setUser(data.user);
-        setNeedsSignature(false);
-        console.log('✅ User registered/loaded:', data.user);
-      } else {
-        console.error('User registration failed:', data.error);
-      }
-    } catch (error) {
-      console.error('Error registering user:', error);
-    } finally {
-      setIsRegistering(false);
-    }
-  };
-
-  if (!isConnected) {
-    const handleConnect = () => {
-      // Try to find injected connector first (MetaMask, etc.)
-      const injectedConnector = connectors.find(c => c.type === 'injected');
-      const connectorToUse = injectedConnector || connectors[0];
-      
-      console.log('Available connectors:', connectors.map(c => ({ name: c.name, type: c.type })));
-      console.log('Using connector:', { name: connectorToUse.name, type: connectorToUse.type });
-      
-      connect({ connector: connectorToUse });
-    };
-
-    return (
-      <div>
-        <button 
-          type="button" 
-          onClick={handleConnect}
-          className="glass-button-primary"
-          style={{ width: '100%', fontWeight: 600 }}
-        >
-          Connect Wallet
-        </button>
-      </div>
-    );
-  }
-
-  if (needsSignature) {
-    return (
-      <div style={{ textAlign: 'center' }}>
-        <p style={{ marginBottom: '24px', fontSize: '0.95rem', opacity: 0.8 }}>
-          Please sign a message to verify wallet ownership and create your account.
-        </p>
-        <button 
-          onClick={handleSignAndRegister}
-          disabled={isSigningPending}
-          className="glass-button-primary"
-          style={{ width: '100%', fontWeight: 600 }}
-        >
-          {isSigningPending ? "Signing..." : "Sign & Create Account"}
-        </button>
-      </div>
-    );
-  }
-
-  if (isCheckingUser) {
-    return (
-      <div style={{ textAlign: 'center', padding: '24px' }}>
-        <div style={{ 
-          width: '48px', 
-          height: '48px', 
-          border: '4px solid rgba(255,255,255,0.3)', 
-          borderTop: '4px solid white', 
-          borderRadius: '50%', 
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto 16px'
-        }}></div>
-        <p style={{ opacity: 0.8 }}>Checking account...</p>
-      </div>
-    );
-  }
-
+function BaseAuthFlow({ user, setUser, isRegistering, verifiedUser, context, onAuthenticate }: any) {
+  // Show loading while registering
   if (isRegistering) {
     return (
       <div style={{ textAlign: 'center', padding: '24px' }}>
@@ -197,33 +174,76 @@ function WalletFirstFlow({ user, setUser, isRegistering, setIsRegistering }: any
           animation: 'spin 1s linear infinite',
           margin: '0 auto 16px'
         }}></div>
-        <p style={{ opacity: 0.8 }}>Creating your account...</p>
+        <p style={{ opacity: 0.8 }}>Setting up your account...</p>
       </div>
     );
   }
 
-  if (user) {
-    return <UserDashboard user={user} disconnect={disconnect} setUser={setUser} />;
+  // Show user dashboard if authenticated and registered
+  if (user && verifiedUser) {
+    return <UserDashboard user={user} setUser={setUser} />;
   }
 
+  // Show authentication prompt if not authenticated
+  if (!verifiedUser) {
+    return (
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ marginBottom: '24px', fontSize: '0.95rem', opacity: 0.8 }}>
+          Welcome to Doxx Me! Authentication is handled automatically through Base App.
+        </p>
+        <div style={{ 
+          padding: '16px', 
+          background: 'rgba(59, 130, 246, 0.1)', 
+          border: '1px solid rgba(59, 130, 246, 0.3)', 
+          borderRadius: '8px',
+          marginBottom: '16px'
+        }}>
+          <p style={{ fontSize: '0.85rem', opacity: 0.9, margin: 0 }}>
+            🔐 Secure authentication via Base App with your Farcaster account
+          </p>
+        </div>
+        <button 
+          onClick={onAuthenticate}
+          className="glass-button-primary"
+          style={{ width: '100%', fontWeight: 600, marginBottom: '16px' }}
+        >
+          Sign In with Farcaster
+        </button>
+        <p style={{ opacity: 0.6, fontSize: '0.85rem' }}>
+          If automatic authentication doesn't work, click above to sign in manually.
+        </p>
+        {context?.user?.fid && (
+          <div style={{ 
+            fontSize: '0.8rem', 
+            opacity: 0.6, 
+            marginTop: '16px',
+            fontFamily: 'monospace' 
+          }}>
+            Farcaster ID: {context.user.fid}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Show loading state while verification is in progress
   return (
-    <div style={{ textAlign: 'center' }}>
-      <p style={{ color: '#fca5a5', marginBottom: '16px' }}>
-        Failed to setup account. Please try again.
-      </p>
-      <button 
-        onClick={() => checkUserOrRequestSignature(address!)}
-        disabled={isCheckingUser}
-        className="glass-button"
-        style={{ width: '100%' }}
-      >
-        {isCheckingUser ? 'Checking...' : 'Retry'}
-      </button>
+    <div style={{ textAlign: 'center', padding: '24px' }}>
+      <div style={{ 
+        width: '48px', 
+        height: '48px', 
+        border: '4px solid rgba(255,255,255,0.3)', 
+        borderTop: '4px solid white', 
+        borderRadius: '50%', 
+        animation: 'spin 1s linear infinite',
+        margin: '0 auto 16px'
+      }}></div>
+      <p style={{ opacity: 0.8 }}>Verifying authentication...</p>
     </div>
   );
 }
 
-function UserDashboard({ user, disconnect, setUser }: any) {
+function UserDashboard({ user, setUser }: any) {
   const handleLogout = async () => {
     try {
       // Call logout API to clear httpOnly cookie
@@ -231,12 +251,10 @@ function UserDashboard({ user, disconnect, setUser }: any) {
         method: 'POST'
       });
       
-      disconnect();
       setUser(null);
     } catch (error) {
       console.error('Logout error:', error);
-      // Still disconnect and clear user state even if API fails
-      disconnect();
+      // Still clear user state even if API fails
       setUser(null);
     }
   };
