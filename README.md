@@ -4,8 +4,10 @@ Prove your online identity with wallet authentication.
 
 Connect your wallet and verify your Reddit karma, account age, and social proof. Data is cryptographically signed and stored as attestion in Golem DB. 
 
-[Base App link](https://doxx-me.vercel.app)
-[Admin panel for verifiers](https://doxx-me.vercel.app/verifier)
+- [Base App link](https://doxx-me.vercel.app)
+- [Admin panel for verifiers](https://doxx-me.vercel.app/verifier)
+
+![screenshot-app](https://github.com/user-attachments/assets/025b320e-ff65-4a2f-9b59-4203f5e0361e)
 
 Built for 💜 [ETHWarsaw hackathon](https://www.ethwarsaw.dev/hackathon)
 
