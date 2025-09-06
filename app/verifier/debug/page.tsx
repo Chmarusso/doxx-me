@@ -2,8 +2,23 @@
 
 import { useEffect, useState } from 'react';
 
+interface DebugInfo {
+  apiRoute?: {
+    status?: number;
+    accessible?: boolean;
+    error?: string;
+  };
+  windowLocation?: {
+    href: string;
+    origin: string;
+    pathname: string;
+  };
+  userAgent?: string;
+  timestamp?: string;
+}
+
 export default function VerifierDebug() {
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugInfo, setDebugInfo] = useState<DebugInfo | null>(null);
 
   useEffect(() => {
     // Check if the Civic Auth API route is accessible
@@ -11,7 +26,7 @@ export default function VerifierDebug() {
       try {
         const response = await fetch('/api/auth/civicauth');
         console.log('API Route response:', response);
-        setDebugInfo(prev => ({
+        setDebugInfo((prev: DebugInfo | null) => ({
           ...prev,
           apiRoute: {
             status: response.status,
@@ -20,7 +35,7 @@ export default function VerifierDebug() {
         }));
       } catch (error) {
         console.error('API Route error:', error);
-        setDebugInfo(prev => ({
+        setDebugInfo((prev: DebugInfo | null) => ({
           ...prev,
           apiRoute: {
             error: error instanceof Error ? error.message : 'Unknown error'
@@ -32,7 +47,7 @@ export default function VerifierDebug() {
     checkApiRoute();
 
     // Check window location and other debug info
-    setDebugInfo(prev => ({
+    setDebugInfo((prev: DebugInfo | null) => ({
       ...prev,
       windowLocation: {
         href: window.location.href,

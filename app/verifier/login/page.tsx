@@ -5,20 +5,22 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 export default function VerifierLogin() {
-  const { user, loading } = useUser();
+  const { user } = useUser();
   const router = useRouter();
-  const [error, setError] = useState<string | null>(null);
+  const [error] = useState<string | null>(null);
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
-    console.log('VerifierLogin: User state changed', { user, loading });
+    console.log('VerifierLogin: User state changed', { user });
     // If user is already logged in, redirect to dashboard
-    if (user && !loading) {
+    if (user && !isRedirecting) {
       console.log('Redirecting to dashboard...');
+      setIsRedirecting(true);
       router.push('/verifier/dashboard');
     }
-  }, [user, loading, router]);
+  }, [user, router, isRedirecting]);
 
-  if (loading) {
+  if (isRedirecting) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <div className="glass-card" style={{ maxWidth: '400px', width: '100%', padding: '32px', textAlign: 'center' }}>
@@ -31,21 +33,12 @@ export default function VerifierLogin() {
             animation: 'spin 1s linear infinite',
             margin: '0 auto 16px'
           }}></div>
-          <p style={{ opacity: 0.8 }}>Checking authentication...</p>
+          <p style={{ opacity: 0.8 }}>Redirecting to dashboard...</p>
         </div>
       </div>
     );
   }
 
-  if (user) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
-        <div className="glass-card" style={{ maxWidth: '400px', width: '100%', padding: '32px', textAlign: 'center' }}>
-          <p style={{ opacity: 0.8, marginBottom: '16px' }}>Redirecting to dashboard...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
