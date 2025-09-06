@@ -207,6 +207,9 @@ model User {
   // Wallet information
   walletAddress String? @unique
 
+  // Farcaster account information  
+  farcasterFid Int? @unique
+
   // Reddit account information
   redditId       String? @unique
   redditUsername String?

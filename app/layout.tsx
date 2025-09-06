@@ -1,23 +1,19 @@
 'use client'
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
-import { config } from "./wagmi";
+import { MiniKitContextProvider } from '@/providers/MiniKitProvider';
 import "./globals.css";
-import { useState } from "react";
 
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [queryClient] = useState(() => new QueryClient());
 
   const embedMeta = {
     "version": "1",
     "imageUrl": "https://doxx-me.vercel.app/frame-og.jpg",
     "button": {
-      "title": "Doxx Me - verify stuff with zkTLS",
+      "title": "Doxx Me - prove stuff with zkTLS",
       "action": {
         "type": "launch_frame",
         "name": "Try now",
@@ -105,13 +101,11 @@ export default function RootLayout({
             animation: 'float 6s ease-in-out infinite'
           }}></div>
         </div>
-        <WagmiProvider config={config}>
-          <QueryClientProvider client={queryClient}>
-            <div style={{ minHeight: '100vh', position: 'relative', zIndex: 10 }}>
-              {children}
-            </div>
-          </QueryClientProvider>
-        </WagmiProvider>
+        <MiniKitContextProvider>
+          <div style={{ minHeight: '100vh', position: 'relative', zIndex: 10 }}>
+            {children}
+          </div>
+        </MiniKitContextProvider>
       </body>
     </html>
   );
