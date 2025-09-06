@@ -6,6 +6,8 @@ import {
   GolemBaseCreate,
   Tagged,
 } from 'golem-base-sdk';
+import { db } from '@/lib/db';
+import { createHash } from 'crypto';
 
 const encoder = new TextEncoder();
 
@@ -134,5 +136,219 @@ export class GolemService {
   private static hashData(data: any): string {
     const crypto = require('crypto');
     return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
+  }
+
+  // Database attestation management methods
+  
+  /**
+   * Create a database attestation record
+   */
+  static async createDatabaseAttestation(data: {
+    entityKey: string;
+    expirationBlock: bigint;
+    platform: string;
+    attestationType: string;
+    rawApiData: any;
+    processedData?: any;
+    apiEndpoint?: string;
+    requestParams?: any;
+    responseHeaders?: any;
+    userId: string;
+  }) {
+    try {
+      const proofHash = this.generateProofHash(data.rawApiData);
+      
+      const attestation = await db.golemAttestation.create({
+        data: {
+          entityKey: data.entityKey,
+          expirationBlock: data.expirationBlock,
+          platform: data.platform,
+          attestationType: data.attestationType,
+          rawApiData: JSON.stringify(data.rawApiData),
+          processedData: data.processedData ? JSON.stringify(data.processedData) : null,
+          proofHash: proofHash,
+          apiEndpoint: data.apiEndpoint,
+          requestParams: data.requestParams ? JSON.stringify(data.requestParams) : null,
+          responseHeaders: data.responseHeaders ? JSON.stringify(data.responseHeaders) : null,
+          userId: data.userId,
+          status: 'active',
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              walletAddress: true,
+            }
+          }
+        }
+      });
+
+      console.log(`Created Golem attestation: ${attestation.id} for user ${data.userId}`);
+      return attestation;
+    } catch (error) {
+      console.error('Error creating Golem attestation:', error);
+      throw new Error(`Failed to create attestation: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Get attestations with filtering
+   */
+  static async getAttestations(filter: {
+    userId?: string;
+    platform?: string;
+    attestationType?: string;
+    entityKey?: string;
+    status?: string;
+    isExpired?: boolean;
+  } = {}) {
+    try {
+      const where: any = {};
+      
+      if (filter.userId) where.userId = filter.userId;
+      if (filter.platform) where.platform = filter.platform;
+      if (filter.attestationType) where.attestationType = filter.attestationType;
+      if (filter.entityKey) where.entityKey = filter.entityKey;
+      if (filter.status) where.status = filter.status;
+      
+      // Handle expiration filtering
+      if (filter.isExpired !== undefined) {
+        const currentBlock = BigInt(Math.floor(Date.now() / 1000));
+        if (filter.isExpired) {
+          where.expirationBlock = { lt: currentBlock };
+        } else {
+          where.expirationBlock = { gte: currentBlock };
+        }
+      }
+
+      const attestations = await db.golemAttestation.findMany({
+        where,
+        include: {
+          user: {
+            select: {
+              id: true,
+              walletAddress: true,
+              redditUsername: true,
+              githubUsername: true,
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      return attestations.map(attestation => ({
+        ...attestation,
+        expirationBlock: attestation.expirationBlock.toString(), // Convert BigInt to string
+        rawApiData: JSON.parse(attestation.rawApiData),
+        processedData: attestation.processedData ? JSON.parse(attestation.processedData) : null,
+        requestParams: attestation.requestParams ? JSON.parse(attestation.requestParams) : null,
+        responseHeaders: attestation.responseHeaders ? JSON.parse(attestation.responseHeaders) : null,
+      }));
+    } catch (error) {
+      console.error('Error fetching Golem attestations:', error);
+      throw new Error(`Failed to fetch attestations: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  /**
+   * Create attestation from Reddit data and store on blockchain
+   */
+  static async createRedditAttestation(userId: string, redditData: any, subredditKarma?: any[]) {
+    const entityKey = `reddit:${redditData.username}`;
+    const expirationBlock = BigInt(Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)); // 1 year
+    
+    const processedData = {
+      username: redditData.username,
+      totalKarma: redditData.total_karma,
+      commentKarma: redditData.comment_karma,
+      linkKarma: redditData.link_karma,
+      accountAge: redditData.created_utc,
+      verified: redditData.has_verified_email,
+      subredditCount: subredditKarma?.length || 0
+    };
+
+    // Store on blockchain
+    const blockchainReceipt = await this.storeVerificationData(
+      `user:${userId}`,
+      'reddit',
+      { ...processedData, subredditKarma }
+    );
+
+    // Store in database
+    const dbAttestation = await this.createDatabaseAttestation({
+      entityKey: blockchainReceipt.entityKey,
+      expirationBlock: BigInt(blockchainReceipt.expirationBlock),
+      platform: 'reddit',
+      attestationType: 'profile',
+      rawApiData: redditData,
+      processedData,
+      apiEndpoint: 'reddit.com/api/v1/me',
+      userId
+    });
+
+    return {
+      blockchain: blockchainReceipt,
+      database: dbAttestation
+    };
+  }
+
+  /**
+   * Create attestation from GitHub data and store on blockchain
+   */
+  static async createGitHubAttestation(userId: string, githubData: any, repositoryContributions?: any[]) {
+    const entityKey = `github:${githubData.login}`;
+    const expirationBlock = BigInt(Math.floor(Date.now() / 1000) + (365 * 24 * 60 * 60)); // 1 year
+    
+    const processedData = {
+      username: githubData.login,
+      name: githubData.name,
+      followers: githubData.followers,
+      following: githubData.following,
+      publicRepos: githubData.public_repos,
+      accountAge: githubData.created_at,
+      repositoryCount: repositoryContributions?.length || 0
+    };
+
+    // Store on blockchain
+    const blockchainReceipt = await this.storeVerificationData(
+      `user:${userId}`,
+      'github',
+      { ...processedData, repositoryContributions }
+    );
+
+    // Store in database
+    const dbAttestation = await this.createDatabaseAttestation({
+      entityKey: blockchainReceipt.entityKey,
+      expirationBlock: BigInt(blockchainReceipt.expirationBlock),
+      platform: 'github',
+      attestationType: 'profile',
+      rawApiData: githubData,
+      processedData,
+      apiEndpoint: 'api.github.com/user',
+      userId
+    });
+
+    return {
+      blockchain: blockchainReceipt,
+      database: dbAttestation
+    };
+  }
+
+  /**
+   * Generate proof hash for integrity verification
+   */
+  private static generateProofHash(data: any): string {
+    const dataString = JSON.stringify(data, Object.keys(data).sort());
+    return createHash('sha256').update(dataString).digest('hex');
+  }
+
+  /**
+   * Verify proof integrity
+   */
+  static verifyProofIntegrity(rawApiData: any, expectedHash: string): boolean {
+    const calculatedHash = this.generateProofHash(rawApiData);
+    return calculatedHash === expectedHash;
   }
 }
