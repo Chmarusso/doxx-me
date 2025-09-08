@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { GolemService } from './golem';
+import { proveRedditData, proveUrl } from './zktls';
 import crypto from 'crypto';
 
 interface RedditUserData {
@@ -233,6 +234,16 @@ export class RedditService {
       });
     }
 
+    // Generate zkTLS proof for Reddit API call
+    try {
+      console.log('Generating zkTLS proof for Reddit user:', userData.name);
+      const zkProof = await proveRedditData(tokenData.access_token, 'DoxxMe/1.0.0', user.id);
+      console.log('zkTLS proof generated successfully:', zkProof.verificationKey);
+    } catch (error) {
+      console.error('Failed to generate zkTLS proof for Reddit:', error);
+      // Don't fail the whole authentication if zkTLS proof fails
+    }
+
     // Create Golem attestation for Reddit verification
     try {
       console.log('Creating Golem attestation for Reddit user:', userData.name);
@@ -252,6 +263,24 @@ export class RedditService {
 
   static async fetchAndStoreKarmaData(accessToken: string, userId: string) {
     const karmaData = await this.fetchKarmaData(accessToken);
+
+    // Generate zkTLS proof for Reddit karma API call
+    try {
+      console.log('Generating zkTLS proof for Reddit karma data');
+      const zkProof = await proveUrl({
+        url: 'https://oauth.reddit.com/api/v1/me/karma',
+        headers: [
+          `Authorization: Bearer ${accessToken}`,
+          'User-Agent: DoxxMe/1.0.0'
+        ],
+        platform: 'reddit',
+        userId
+      });
+      console.log('zkTLS karma proof generated successfully:', zkProof.verificationKey);
+    } catch (error) {
+      console.error('Failed to generate zkTLS proof for Reddit karma:', error);
+      // Don't fail the whole process if zkTLS proof fails
+    }
     
     const subredditKarmaArray = karmaData.data?.map((item: RedditKarmaItem) => ({
       subreddit: item.sr,

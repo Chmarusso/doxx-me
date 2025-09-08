@@ -161,6 +161,42 @@ model RepositoryContribution {
   @@map("repository_contributions")
 }
 
+model VlayerProof {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // vlayer proof identification
+  vlayerProofId    String   @unique // ID returned from vlayer API
+  url              String   // URL that was proven
+  notary           String   // Notary server used
+  headers          String?  // JSON array of headers used
+  
+  // Proof status and results
+  status           String   // "pending", "completed", "failed"
+  proof            String?  // The actual zkTLS proof when completed
+  publicInputs     String?  // JSON string of public inputs
+  verificationKey  String?  // Verification key for the proof
+  error            String?  // Error message if failed
+  
+  // Request metadata
+  platform         String?  // "reddit", "github", "custom", etc.
+  requestTimestamp DateTime @default(now()) // When proof was requested
+  completedAt      DateTime? // When proof was completed
+  
+  // User relationship
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Attestation relationship
+  golemAttestations GolemAttestation[]
+
+  @@index([vlayerProofId])
+  @@index([userId, platform])
+  @@index([status])
+  @@map("vlayer_proofs")
+}
+
 model GolemAttestation {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
@@ -172,8 +208,8 @@ model GolemAttestation {
   issuedAt         DateTime @default(now()) // When the attestation was issued
   
   // Attestation metadata
-  platform         String   // "reddit", "github", etc.
-  attestationType  String   // "karma", "contributions", "profile", etc.
+  platform         String   // "reddit", "github", "zktls", etc.
+  attestationType  String   // "karma", "contributions", "profile", "zktls_proof", etc.
   status           String   @default("active") // "active", "expired", "revoked"
   
   // Raw data storage - complete API responses
@@ -186,6 +222,10 @@ model GolemAttestation {
   requestParams    String?  // JSON string of request parameters used
   responseHeaders  String?  // JSON string of relevant response headers
   
+  // zkTLS proof relationship (optional)
+  vlayerProofId    String?
+  vlayerProof      VlayerProof? @relation(fields: [vlayerProofId], references: [id], onDelete: SetNull)
+  
   // User relationship
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -195,6 +235,7 @@ model GolemAttestation {
   @@index([expirationBlock])
   @@index([platform, attestationType])
   @@index([userId, platform])
+  @@index([vlayerProofId])
   @@unique([userId, entityKey, platform]) // Prevent duplicate attestations
   @@map("golem_attestations")
 }
@@ -228,6 +269,7 @@ model User {
   githubData        GitHubData?
   verifications     Verification[]
   golemAttestations GolemAttestation[]
+  vlayerProofs      VlayerProof[]
   
   @@map("users")
 }

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import crypto from 'crypto';
 import { GolemService } from './golem';
+import { proveGithubData, proveUrl } from './zktls';
 
 interface GitHubUserData {
   id: number | string;
@@ -499,6 +500,16 @@ export class GitHubService {
       });
     }
 
+    // Generate zkTLS proof for GitHub API call
+    try {
+      console.log('Generating zkTLS proof for GitHub user:', userData.login);
+      const zkProof = await proveGithubData(tokenData.access_token, 'DoxxMe/1.0.0', user.id);
+      console.log('zkTLS proof generated successfully:', zkProof.verificationKey);
+    } catch (error) {
+      console.error('Failed to generate zkTLS proof for GitHub:', error);
+      // Don't fail the whole authentication if zkTLS proof fails
+    }
+
     // Create Golem attestation for GitHub verification
     try {
       console.log('Creating Golem attestation for GitHub user:', userData.login);
@@ -524,6 +535,25 @@ export class GitHubService {
     username: string
   ) {
     const repositoryData = await this.fetchRepositoryContributions(accessToken, owner, repo, username);
+
+    // Generate zkTLS proof for GitHub GraphQL API call
+    try {
+      console.log('Generating zkTLS proof for GitHub repository contributions:', `${owner}/${repo}`);
+      const zkProof = await proveUrl({
+        url: 'https://api.github.com/graphql',
+        headers: [
+          `Authorization: Bearer ${accessToken}`,
+          'Content-Type: application/json',
+          'User-Agent: DoxxMe/1.0.0'
+        ],
+        platform: 'github',
+        userId
+      });
+      console.log('zkTLS repository proof generated successfully:', zkProof.verificationKey);
+    } catch (error) {
+      console.error('Failed to generate zkTLS proof for GitHub repository:', error);
+      // Don't fail the whole process if zkTLS proof fails
+    }
     
     // Calculate metrics
     const prsCreated = repositoryData.pullRequests.length;
